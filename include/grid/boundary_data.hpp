@@ -1,6 +1,9 @@
 #ifndef NAST_GRID_BOUNDARY_DATA_HPP_
 #define NAST_GRID_BOUNDARY_DATA_HPP_
 
+#include <iostream>
+#include <sstream>
+
 namespace nast { namespace grid {
 
 template<typename T>
@@ -39,7 +42,15 @@ struct boundary_data {
         os << "{" << data.x << "," << data.y << "}";
         return os;
     }
-
+    
+	std::string to_string() const
+	{
+		std::ostringstream stream;
+		
+		stream << *this;
+		
+		return stream.str();
+	} 
 };
 
 } //namespace grid

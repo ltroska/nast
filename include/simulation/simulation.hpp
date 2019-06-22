@@ -57,7 +57,11 @@ namespace nast { namespace simulation {
 		
 		Real do_timestep(Real dt)
 		{					
-			return integrator.do_timestep(grid, solver, bcs, params, dt);	
+			if (dt < 1e-12)
+			{
+				dt = params.initial_dt;
+			}
+			return integrator.do_timestep(grid, bcs, params, dt);	
 		}
 		
 		void run()
@@ -81,8 +85,7 @@ namespace nast { namespace simulation {
 				}
 				
 				dt = do_timestep(dt);
-			
-				write_grid_to_file("test_" + std::to_string(timestep) + ".vtr");
+			//	write_grid_to_file("test_" + std::to_string(timestep) + ".vtr");
 				
 				t += dt;
 				

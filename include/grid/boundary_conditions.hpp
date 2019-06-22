@@ -18,33 +18,71 @@ enum boundary_condition_type {
 	outstream,
 	instream
 };
+
+enum direction {
+	left,
+	right,
+	bottom,
+	top,
+	external_forces
+};
 	
 /// This class represents one set of boundary conditions.
 struct boundary_conditions
 {
 	using data_type = boundary_data<Real>;
-	
-    boundary_conditions()
-    : left(0), right(0), bottom(0), top(0), external_forces(0),
-      left_type(boundary_condition_type::noslip), right_type(boundary_condition_type::noslip),
-      bottom_type(boundary_condition_type::noslip), top_type(boundary_condition_type::noslip)
-    {}
 
-    data_type left, right, bottom, top, external_forces;
-    boundary_condition_type left_type, right_type, bottom_type, top_type;
+    boundary_conditions()
+     
+    {
+		 type[direction::left] = boundary_condition_type::noslip;
+		  type[direction::right]=boundary_condition_type::noslip;
+      type[direction::bottom]=boundary_condition_type::noslip;
+       type[direction::top]=boundary_condition_type::noslip;
+       type[direction::external_forces]=boundary_condition_type::noslip;
+       
+		 value[direction::left] = 0;
+		  value[direction::right]=0;
+      value[direction::bottom]=0;
+       value[direction::top]=0;
+       value[direction::external_forces]=0;
+       }
+
+    data_type value[5];
+    boundary_condition_type type[5];
+    
+    void set_type(direction dir, boundary_condition_type t)
+    {
+		type[dir] = t;
+	}
+	
+    void set_value(direction dir, Real u, Real v)
+    {
+		value[dir].x = u;
+		value[dir].y = v;		
+	}
     
     friend std::ostream& operator<<(std::ostream& os, boundary_conditions const& data);
+    
+	std::string to_string() const
+	{
+		std::ostringstream stream;
+		
+		stream << *this;
+		
+		return stream.str();
+	} 
 };
 
 std::ostream& operator<<(std::ostream& os, boundary_conditions const& data)
 {
 	os 		<< "Boundary conditions:"
 			<< "\n\t external forces: "
-			<< "{" << data.external_forces.x << ", " << data.external_forces.y << "},"
-			<< "\n\t left: " << bc_to_string[data.left_type] << " {" << data.left.x << ", " << data.left.y << "}"
-			<< "\n\t right: " << bc_to_string[data.right_type] << " {" << data.right.x << ", " << data.right.y << "}"
-			<< "\n\t bottom: " << bc_to_string[data.bottom_type] << " {" << data.bottom.x << ", " << data.bottom.y << "}"
-			<< "\n\t top: " << bc_to_string[data.top_type] << " {" << data.top.x << ", " << data.top.y << "}\n";
+			<< "{" << data.value[direction::external_forces].x << ", " << data.value[direction::external_forces].y << "},"
+			<< "\n\t left: " << bc_to_string[data.type[direction::left]] << " {" << data.value[direction::left].x << ", " << data.value[direction::left].y << "}"
+			<< "\n\t right: " << bc_to_string[data.type[direction::right]] << " {" << data.value[direction::right].x << ", " << data.value[direction::right].y << "}"
+			<< "\n\t bottom: " << bc_to_string[data.type[direction::bottom]] << " {" << data.value[direction::bottom].x << ", " << data.value[direction::bottom].y << "}"
+			<< "\n\t top: " << bc_to_string[data.type[direction::top]] << " {" << data.value[direction::top].x << ", " << data.value[direction::top].y << "}\n";
 	return os;
 }
 

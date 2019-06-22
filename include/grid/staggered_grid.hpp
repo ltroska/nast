@@ -1,16 +1,17 @@
 #ifndef NAST_GRID_STAGGERED_GRID_HPP_
 #define NAST_GRID_STAGGERED_GRID_HPP_
 
-#include <bitset>
-
 #include "grid/grid_data.hpp"
+
+#include <bitset>
+#include <algorithm>
 
 namespace nast { namespace grid {
 	
 	class staggered_grid
 	{
 	public:
-		staggered_grid(std::size_t size_x_, std::size_t size_y_) 
+		staggered_grid(std::size_t size_x_ = 0, std::size_t size_y_ = 0) 
 			: 
 			  u(size_x_, size_y_), v(size_x_, size_y_), f(size_x_, size_y_),
 			  g(size_x_, size_y_), p(size_x_, size_y_), rhs(size_x_, size_y_),
@@ -42,28 +43,78 @@ namespace nast { namespace grid {
 			
 			reset_cell_types();
 		}
-				
-		void toggle_cell_type(std::size_t i_min, std::size_t i_max, std::size_t j_min, std::size_t j_max)
+		
+		void set_obstacle(std::size_t i_min, std::size_t i_max, std::size_t j_min, std::size_t j_max)
 		{
+			obstacle_cells.reserve(obstacle_cells.size() + (i_max - i_min + 1) * (j_max - j_min + 1));
+			
 			for (std::size_t i = i_min; i <= i_max; ++i)
 			{
 				for (std::size_t j = j_min; j <= j_max; ++j)
 				{
 					auto& type = cell_type(i, j);
 										
-					type.flip(is_obstacle);
-					type.flip(is_fluid);
+					if ( (i == i_min && type[has_fluid_left]) 
+						|| (i == i_max && type[has_fluid_right])
+						|| (j == j_min && type[has_fluid_bottom])
+						|| (j == j_max && type[has_fluid_top]) )
+					{
+						obstacle_cells.emplace_back(i, j);
+					}
 					
-					cell_type(i - 1, j).flip(has_fluid_right);
-					cell_type(i + 1, j).flip(has_fluid_left);
-					cell_type(i, j - 1).flip(has_fluid_top);
-					cell_type(i, j + 1).flip(has_fluid_bottom);					
+					fluid_cells.erase(std::remove(fluid_cells.begin(), fluid_cells.end(), std::make_pair(i, j)), fluid_cells.end());
+					
+										
+					type.set(is_obstacle);
+					type.set(is_fluid, 0);
+					
+					cell_type(i - 1, j).set(has_fluid_right, 0);
+					cell_type(i + 1, j).set(has_fluid_left, 0);
+					cell_type(i, j - 1).set(has_fluid_top, 0);
+					cell_type(i, j + 1).set(has_fluid_bottom, 0);					
 				}
 			}
 		}
-				
+		
+		void set_fluid(std::size_t i_min, std::size_t i_max, std::size_t j_min, std::size_t j_max)
+		{
+			fluid_cells.reserve(fluid_cells.size() + (i_max - i_min + 1) * (j_max - j_min + 1));
+			
+			for (std::size_t i = i_min; i <= i_max; ++i)
+			{
+				for (std::size_t j = j_min; j <= j_max; ++j)
+				{
+					auto& type = cell_type(i, j);
+										
+					if ( (i == i_min && type[has_fluid_left]) 
+						|| (i == i_max && type[has_fluid_right])
+						|| (j == j_min && type[has_fluid_bottom])
+						|| (j == j_max && type[has_fluid_top]) )
+					{
+						obstacle_cells.erase(std::remove(obstacle_cells.begin(), obstacle_cells.end(), std::make_pair(i, j)), obstacle_cells.end());
+					}
+					
+					fluid_cells.emplace_back(i, j);
+					
+										
+					type.set(is_fluid);
+					type.set(is_obstacle, 0);
+					
+					cell_type(i - 1, j).set(has_fluid_right, 1);
+					cell_type(i + 1, j).set(has_fluid_left, 1);
+					cell_type(i, j - 1).set(has_fluid_top, 1);
+					cell_type(i, j + 1).set(has_fluid_bottom, 1);					
+				}
+			}
+		}
+								
 		void reset_cell_types()
 		{			
+			obstacle_cells.clear();
+			fluid_cells.clear();
+			
+			fluid_cells.reserve( (size_x - 2) * (size_y - 2) );
+			
 			for (std::size_t i = 0; i < size_x; ++i)
 			{
 				for (std::size_t j = 0; j < size_y; ++j)
@@ -95,6 +146,8 @@ namespace nast { namespace grid {
 						if (i + 1 != size_x -1) type.set(has_fluid_right);
 						if (j - 1 != 0) type.set(has_fluid_bottom);
 						if (j + 1 != size_y - 1) type.set(has_fluid_top);
+						
+						fluid_cells.emplace_back(i, j);
 					}					
 				}
 			}
@@ -121,6 +174,9 @@ namespace nast { namespace grid {
 		grid_data<Real> rhs;
 		
 		grid_data<std::bitset<NUM_BITS> > cell_type;
+		
+		std::vector<std::pair<std::size_t, std::size_t> > fluid_cells;
+		std::vector<std::pair<std::size_t, std::size_t> > obstacle_cells;
 		
 	private:
 		std::size_t size_x, size_y, size;

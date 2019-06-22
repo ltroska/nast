@@ -4,6 +4,8 @@
 #include "util/defines.hpp"
 
 #include <vector>
+#include <iostream>
+#include <sstream>
 
 namespace nast { namespace grid {
 
@@ -59,6 +61,11 @@ public:
     {
 		return data_[to_flat_index(idx, idy)];
 	}
+	
+	void assign(std::size_t idx, std::size_t idy, T value)
+	{
+		(*this)(idx, idy) = value;
+	}
 
     typename std::vector<T>::iterator begin()
     { 
@@ -76,7 +83,16 @@ public:
     std::size_t size_;
     
     template<typename U>
-    friend std::ostream& operator<<(std::ostream &os, const grid_data<U>& data);    
+    friend std::ostream& operator<<(std::ostream &os, const grid_data<U>& data);
+    
+	std::string to_string() const
+	{
+		std::ostringstream stream;
+		
+		stream << *this;
+		
+		return stream.str();
+	} 
     
 protected:
 	std::size_t to_flat_index(std::size_t idx, std::size_t idy) const
@@ -90,19 +106,26 @@ protected:
 template<typename T>
 std::ostream& operator<<(std::ostream &os, const grid_data<T>& data)
 {
-	for (std::size_t j = data.size_y_ - 1; j >= 0; --j)
+	if (data.size_y_ == 0)
 	{
-		for (std::size_t i = 0; i < data.size_x_; ++i)
-		{
-			os << data(i, j) << " ";
-		}		
-		if (j == 0)
-		{
-			break;
-		}
-		
-		os << "\n";
+		os << "empty\n";
 	}
+	else
+	{	
+		for (std::size_t j = data.size_y_ - 1; j >= 0; --j)
+		{
+			for (std::size_t i = 0; i < data.size_x_; ++i)
+			{
+				os << data(i, j) << " ";
+			}		
+			if (j == 0)
+			{
+				break;
+			}
+			
+			os << "\n";
+		}
+	}	
 	return os;
 }
 

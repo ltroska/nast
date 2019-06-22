@@ -23,22 +23,17 @@ public:
 		Real tmp;
 		Real residual = 0;
 		
-		for (std::size_t j = 1; j < size_y - 1; ++j)
+		for (auto& id : grid.fluid_cells)
 		{
-			for (std::size_t i = 1; i < size_x - 1; ++i)
-			{
-				auto const& type = grid.cell_type(i, j);
-				
-				if (type[is_fluid])
-				{
-					tmp =
-						(grid.p(i + 1, j) - 2 * grid.p(i, j) + grid.p(i - 1, j)) * over_dx_sq
-						+ (grid.p(i, j + 1) - 2 * grid.p(i, j) + grid.p(i, j - 1)) * over_dy_sq
-						- grid.rhs(i, j);
+			auto& i = id.first;
+			auto& j = id.second;
 
-					residual += std::pow(tmp, 2);
-                }
-            }
+			tmp =
+				(grid.p(i + 1, j) - 2 * grid.p(i, j) + grid.p(i - 1, j)) * over_dx_sq
+				+ (grid.p(i, j + 1) - 2 * grid.p(i, j) + grid.p(i, j - 1)) * over_dy_sq
+				- grid.rhs(i, j);
+
+			residual += std::pow(tmp, 2);
         }
              						       
         return residual / ((size_x - 1) * (size_y - 1)) ;
