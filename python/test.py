@@ -1,5 +1,7 @@
 import nast
 
+print(dir(nast))
+
 bcs = nast.BoundaryConditions()
 
 bcs.left_type = nast.BoundaryConditionType.instream

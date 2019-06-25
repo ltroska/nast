@@ -88,28 +88,33 @@ public:
 		
 		for (j = 1; j < size_y - 1; ++j)
 		{
-			switch(bcs.type[grid::direction::left])
-			{
-				case grid::boundary_condition_type::noslip:
-					grid.u(i, j) = 0;
-					grid.v(i, j) = 2 * bcs.value[grid::direction::left].y - grid.v(i + 1, j);
-					break;
+            auto const& type = grid.cell_type(i, j);
 
-				case grid::boundary_condition_type::slip:
-					grid.u(i, j) = 0;
-					grid.v(i, j) = grid.v(i + 1, j);
-					break;
+            if (type[has_fluid_right])
+            {
+                switch(bcs.type[grid::direction::left])
+                {
+                    case grid::boundary_condition_type::noslip:
+                        grid.u(i, j) = 0;
+                        grid.v(i, j) = 2 * bcs.value[grid::direction::left].y - grid.v(i + 1, j);
+                        break;
 
-				case grid::boundary_condition_type::outstream:
-					grid.u(i, j) = grid.u(i + 1, j);
-					grid.v(i, j) = grid.v(i + 1, j);
-					break;
+                    case grid::boundary_condition_type::slip:
+                        grid.u(i, j) = 0;
+                        grid.v(i, j) = grid.v(i + 1, j);
+                        break;
 
-				case grid::boundary_condition_type::instream:
-					grid.u(i, j) = bcs.value[grid::direction::left].x;
-					grid.v(i, j) = 2 * bcs.value[grid::direction::left].y - grid.v(i + 1, j);
-					break;
-			}
+                    case grid::boundary_condition_type::outstream:
+                        grid.u(i, j) = grid.u(i + 1, j);
+                        grid.v(i, j) = grid.v(i + 1, j);
+                        break;
+
+                    case grid::boundary_condition_type::instream:
+                        grid.u(i, j) = bcs.value[grid::direction::left].x;
+                        grid.v(i, j) = 2 * bcs.value[grid::direction::left].y - grid.v(i + 1, j);
+                        break;
+                }
+            }
 		}
 		
 		// right
@@ -118,28 +123,33 @@ public:
 		
 		for (j = 1; j < size_y - 1; ++j)
 		{
-			switch(bcs.type[grid::direction::right])
-			{
-				case grid::boundary_condition_type::noslip:
-					grid.u(i - 1, j) = 0;
-					grid.v(i, j) = 2 * bcs.value[grid::direction::right].y - grid.v(i - 1, j);
-					break;
+            auto const& type = grid.cell_type(i, j);
 
-				case grid::boundary_condition_type::slip:
-					grid.u(i - 1, j) = 0;
-					grid.v(i, j) = grid.v(i - 1, j);
-					break;
+            if (type[has_fluid_left])
+            {
+                switch(bcs.type[grid::direction::right])
+                {
+                    case grid::boundary_condition_type::noslip:
+                        grid.u(i - 1, j) = 0;
+                        grid.v(i, j) = 2 * bcs.value[grid::direction::right].y - grid.v(i - 1, j);
+                        break;
 
-				case grid::boundary_condition_type::outstream:
-					grid.u(i - 1, j) = grid.u(i - 2, j);
-					grid.v(i, j) = grid.v(i - 1, j);
-					break;
+                    case grid::boundary_condition_type::slip:
+                        grid.u(i - 1, j) = 0;
+                        grid.v(i, j) = grid.v(i - 1, j);
+                        break;
 
-				case grid::boundary_condition_type::instream:
-					grid.u(i - 1, j) = bcs.value[grid::direction::right].x;
-					grid.v(i, j) = 2 * bcs.value[grid::direction::right].y - grid.v(i - 1, j);
-					break;
-			}
+                    case grid::boundary_condition_type::outstream:
+                        grid.u(i - 1, j) = grid.u(i - 2, j);
+                        grid.v(i, j) = grid.v(i - 1, j);
+                        break;
+
+                    case grid::boundary_condition_type::instream:
+                        grid.u(i - 1, j) = bcs.value[grid::direction::right].x;
+                        grid.v(i, j) = 2 * bcs.value[grid::direction::right].y - grid.v(i - 1, j);
+                        break;
+                }
+            }
 		}
 
 		// bottom
@@ -148,28 +158,33 @@ public:
 		
 		for (i = 1; i < size_x - 1; ++i)
 		{
-			switch(bcs.type[grid::direction::bottom])
-			{
-				case grid::boundary_condition_type::noslip:
-					grid.u(i, j) = 2 * bcs.value[grid::direction::bottom].x - grid.u(i, j + 1);
-					grid.v(i, j) = 0;
-					break;
+            auto const& type = grid.cell_type(i, j);
 
-				case grid::boundary_condition_type::slip:
-					grid.u(i, j) = grid.u(i, j + 1);
-					grid.v(i, j) = 0;
-					break;
+            if (type[has_fluid_top])
+            {
+                switch(bcs.type[grid::direction::bottom])
+                {
+                    case grid::boundary_condition_type::noslip:
+                        grid.u(i, j) = 2 * bcs.value[grid::direction::bottom].x - grid.u(i, j + 1);
+                        grid.v(i, j) = 0;
+                        break;
 
-				case grid::boundary_condition_type::outstream:
-					grid.u(i, j) = grid.u(i, j + 1);
-					grid.v(i, j) = grid.v(i, j + 1);
-					break;
+                    case grid::boundary_condition_type::slip:
+                        grid.u(i, j) = grid.u(i, j + 1);
+                        grid.v(i, j) = 0;
+                        break;
 
-				case grid::boundary_condition_type::instream:
-					grid.u(i, j) = 2 * bcs.value[grid::direction::bottom].x - grid.u(i, j + 1);
-					grid.v(i, j) = bcs.value[grid::direction::bottom].y;
-					break;
-			}
+                    case grid::boundary_condition_type::outstream:
+                        grid.u(i, j) = grid.u(i, j + 1);
+                        grid.v(i, j) = grid.v(i, j + 1);
+                        break;
+
+                    case grid::boundary_condition_type::instream:
+                        grid.u(i, j) = 2 * bcs.value[grid::direction::bottom].x - grid.u(i, j + 1);
+                        grid.v(i, j) = bcs.value[grid::direction::bottom].y;
+                        break;
+                }
+            }
 		}
 		
 		// top
@@ -181,28 +196,33 @@ public:
 			auto& neighbor_u = (i == size_x - 2) ? top_right_fluid_u : grid.u(i, j - 1);
 			auto& neighbor_v = (i == size_x - 2) ? top_right_fluid_v : grid.v(i, j - 2);
 			
-			switch(bcs.type[grid::direction::top])
-			{
-				case grid::boundary_condition_type::noslip:
-					grid.u(i, j) = 2 * bcs.value[grid::direction::top].x -  neighbor_u;
-					grid.v(i, j - 1) = 0;
-					break;
+            auto const& type = grid.cell_type(i, j);
 
-				case grid::boundary_condition_type::slip:
-					grid.u(i, j) =  neighbor_u;
-					grid.v(i, j - 1) = 0;
-					break;
+            if (type[has_fluid_bottom])
+            {
+                switch(bcs.type[grid::direction::top])
+                {
+                    case grid::boundary_condition_type::noslip:
+                        grid.u(i, j) = 2 * bcs.value[grid::direction::top].x -  neighbor_u;
+                        grid.v(i, j - 1) = 0;
+                        break;
 
-				case grid::boundary_condition_type::outstream:
-					grid.u(i, j) =  neighbor_u;
-					grid.v(i, j - 1) = neighbor_v;
-					break;
+                    case grid::boundary_condition_type::slip:
+                        grid.u(i, j) =  neighbor_u;
+                        grid.v(i, j - 1) = 0;
+                        break;
 
-				case grid::boundary_condition_type::instream:
-					grid.u(i, j) = 2 * bcs.value[grid::direction::top].x -  neighbor_u;
-					grid.v(i, j - 1) = bcs.value[grid::direction::top].y;
-					break;
-			}
+                    case grid::boundary_condition_type::outstream:
+                        grid.u(i, j) =  neighbor_u;
+                        grid.v(i, j - 1) = neighbor_v;
+                        break;
+
+                    case grid::boundary_condition_type::instream:
+                        grid.u(i, j) = 2 * bcs.value[grid::direction::top].x -  neighbor_u;
+                        grid.v(i, j - 1) = bcs.value[grid::direction::top].y;
+                        break;
+                }
+            }
 		}
 		
 		for (auto& id : grid.obstacle_cells)

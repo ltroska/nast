@@ -2,6 +2,7 @@
 #define NAST_IO_VTK_WRITER_HPP_
 
 #include "grid/staggered_grid.hpp"
+#include "grid/particle.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -154,11 +155,91 @@ struct vtk_writer
 			
 			<< "</Piece>" << std::endl
 			<< "</RectilinearGrid>" << std::endl
+
 			<< "</VTKFile>" << std::endl;
+
+
 
 		fb.close();
 		
 	}
+
+	void write_particles(std::string filename, std::vector<grid::particle> const& particles)
+    {
+        if (!ends_with(filename, ".vtu"))
+		{
+			filename.append (".vtu");
+		}
+
+		std::filebuf fb;
+		fb.open (const_cast < char *>(filename.c_str ()), std::ios::out);
+		std::ostream os (&fb);
+
+        std::stringstream particle_stream;
+		particle_stream << std::setprecision(std::numeric_limits<double>::digits10);
+
+        std::stringstream connectivity_stream;
+		connectivity_stream << std::setprecision(std::numeric_limits<double>::digits10);
+
+        std::stringstream offset_stream;
+		offset_stream << std::setprecision(std::numeric_limits<double>::digits10);
+
+        std::stringstream type_stream;
+		type_stream << std::setprecision(std::numeric_limits<double>::digits10);
+
+        std::stringstream angle_stream;
+		angle_stream << std::setprecision(std::numeric_limits<double>::digits10);
+
+
+        std::size_t count = 0;
+        for (const auto& particle : particles)
+        {
+            particle_stream << particle.x << " " << particle.y << " 0 ";
+            angle_stream << particle.angle << " ";
+            connectivity_stream << count++ << " ";
+            offset_stream << count << " ";
+            type_stream << "1 ";
+        }
+
+        os  << std::setprecision(std::numeric_limits<double>::digits10)
+			<< "<?xml version=\"1.0\"?>" << std::endl
+			<< "<VTKFile type=\"UnstructuredGrid\">" << std::endl
+            << "<UnstructuredGrid>" << std::endl
+
+			<< "<Piece NumberOfPoints=\"" << particles.size() << "\" NumberOfCells=\"" << particles.size() << "\">" << std::endl
+
+            << "<Points>" << std::endl
+            << "<DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << std::endl
+            << particle_stream.str() << std::endl
+            << "</DataArray>" << std::endl
+            << "</Points>" << std::endl
+
+            << "<Cells>" << std::endl
+            << "<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">" << std::endl
+            << connectivity_stream.str() << std::endl
+            << "</DataArray>" << std::endl
+            << "<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">" << std::endl
+            << offset_stream.str() << std::endl
+            << "</DataArray>" << std::endl
+            << "<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">" << std::endl
+            << type_stream.str() << std::endl
+            << "</DataArray>" << std::endl
+            << "</Cells>" << std::endl
+
+            << "<PointData>" << std::endl
+            << "<DataArray type=\"Float32\" Name=\"Angle\" NumberOfComponents=\"1\" format=\"ascii\">" << std::endl
+            << angle_stream.str() << std::endl
+            << "</DataArray>" << std::endl
+            << "</PointData>" << std::endl
+
+			<< "</Piece>" << std::endl
+            << "</UnstructuredGrid>" << std::endl
+
+
+			<< "</VTKFile>" << std::endl;
+
+        		fb.close();
+    }
 };
 
 } //namespace io

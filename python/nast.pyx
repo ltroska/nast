@@ -34,8 +34,7 @@ cdef class TimeIntegrator:
 		
 	def do_timestep(self, Grid grid, BoundaryConditions boundary_conditions, Parameters parameters, dt = 0.):
 		return deref(self._this_ptr).do_timestep(deref(grid._this_ptr), deref(boundary_conditions._this_ptr), parameters._c_parameters, dt)
-
-		
+	
 class BoundaryConditionType(Enum):
 	noslip = 0
 	slip = 1

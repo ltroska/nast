@@ -52,6 +52,13 @@ cdef extern from "grid/grid_data.hpp" namespace "nast::grid":
 		
 		string to_string()
 
+cdef extern from "grid/particle.hpp" namespace "nast::grid":
+
+	cdef cppclass particle:
+		double x
+		double y
+		double angle
+
 cdef extern from "grid/staggered_grid.hpp" namespace "nast::grid":
 		
 	cdef cppclass staggered_grid:
