@@ -1,9 +1,12 @@
-from setuptools import setup, Extension
-from Cython.Build import cythonize
+from distutils.core import setup
+from distutils.extension import Extension
 
-ext = [Extension("nast", sources=["nast.pyx"], include_dirs=["../include"])]
+import os
 
-setup(name = "nast",
-      version = "0.1",
-      ext_modules = cythonize(ext)
-      )
+os.environ["CFLAGS"] += ' -I/home/ltroska/.buildozer/android/platform/android-ndk-r17c/sources/cxx-stl/stlport/stlport'
+os.environ["CXXFLAGS"] += ' -I/home/ltroska/.buildozer/android/platform/android-ndk-r17c/sources/cxx-stl/stlport/stlport'
+os.environ["LDFLAGS"] += ' -L/home/ltroska/.buildozer/android/platform/android-ndk-r17c/sources/cxx-stl/stlport/libs/armeabi-v7a -lstlport_shared'
+
+ext_modules = [Extension("nast", ["nast.cpp"], language="c++")]
+
+setup(name='nast', ext_modules = ext_modules)

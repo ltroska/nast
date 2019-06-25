@@ -37,20 +37,9 @@ int main(int argc, char* argv[])
 	sim.grid.set_obstacle(1, 20, 1, 9);
 	sim.grid.set_obstacle(25, 35, 11, 18);
 	
-    std::vector<nast::grid::particle> particles(10000);
+    std::vector<nast::grid::particle> particles;
 
-    std::random_device rd;
-
-    std::mt19937 e2(rd());
-
-    std::uniform_real_distribution<> dist_x(0, 5);
-    std::uniform_real_distribution<> dist_y(0, 1);
-
-    for (auto& p : particles)
-    {
-        p.x = dist_x(rd);
-        p.y = dist_y(rd);
-    }
+    particles.reserve(1000);
 
 
     writer.write_particles("particles", particles);
@@ -63,30 +52,30 @@ int main(int argc, char* argv[])
     Real t = 0;
     Real old_dt;
 
-    std::size_t iteration = 0;
+    std::size_t timestep = 0;
 
     while (true)
     {
-        ++iteration;
+        ++timestep;
         old_dt = dt;
         dt = integrator.do_timestep(sim.grid, bcs, sim.params, dt);
+
+        if (timestep % 10 == 0)
+            tracer.add_particles(particles, sim.grid, bcs, nast::time_integrator::particle_distribution::inflow, 100);
 
         tracer.advance_particles(particles, sim.grid, bcs, old_dt);
 
         t += dt;
 
-        writer.write_grid("flow_" + std::to_string(iteration), sim.grid);
-        writer.write_particles("particles_" + std::to_string(iteration), particles);
+        writer.write_grid("flow_" + std::to_string(timestep), sim.grid);
+        writer.write_particles("particles_" + std::to_string(timestep), particles);
+
+        std::cout << "Timestep " << timestep << std::endl;
+
+        if (timestep == 1000)
+            break;
 
     }
-
-	sim.params.max_solver_iterations = 1000;
-	sim.params.eps = 1e-10;
-	sim.params.verbose = true;
-	sim.params.t_end = 0;
-	sim.params.max_timesteps = 10;
-	
-	sim.run();
 	
     return 1;
 }

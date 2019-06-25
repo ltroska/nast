@@ -6,6 +6,8 @@
 namespace nast { namespace grid {
 
 struct particle {
+    particle(Real x_, Real y_, Real angle_) : x(x_), y(y_), angle(angle_) {}
+
     Real x, y, angle;
 };
 
