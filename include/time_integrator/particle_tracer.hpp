@@ -2,6 +2,7 @@
 #define NAST_TIME_INTEGRATOR_PARTICLE_TRACER_HPP_
 
 #include "grid/staggered_grid.hpp"
+#include "grid/particle.hpp"
 
 #include <vector>
 #include <cmath>
@@ -10,17 +11,10 @@
 
 namespace nast { namespace time_integrator {
 
-enum particle_distribution
-{
-    uniform,
-    random,
-    inflow
-};
-
 class particle_tracer
 {
 public:
-    static void add_particles(std::vector<grid::particle>& particles, grid::staggered_grid const& grid, grid::boundary_conditions const& bcs, particle_distribution distribution, std::size_t amount)
+    static void add_particles(std::vector<grid::particle>& particles, grid::staggered_grid const& grid, grid::boundary_conditions const& bcs, grid::particle_distribution distribution, std::size_t amount)
     {
         particles.reserve(particles.size() + amount);
 
@@ -33,13 +27,6 @@ public:
         auto length_x = grid.get_length_x();
         auto length_y = grid.get_length_y();
 
-        std::random_device rd;
-
-        std::mt19937 e2(rd());
-
-        std::uniform_real_distribution<> dist_x(0, length_x);
-        std::uniform_real_distribution<> dist_y(0, length_y);
-
         Real x, y;
 
         std::size_t i, j;
@@ -49,7 +36,7 @@ public:
 
         switch (distribution)
         {
-            case particle_distribution::uniform:
+            case grid::particle_distribution::uniform:
             {
                 particles_dx = dx / (dx + dy) ;
                 particles_dy = 1 - particles_dx;
@@ -59,8 +46,8 @@ public:
                 particles_in_x = std::round(scaled_root * particles_dx);
                 particles_in_y = std::round(scaled_root * particles_dy);
 
-                particles_dx = length_x / (particles_in_x + 1);
-                particles_dy = length_y / (particles_in_y + 1);
+                particles_dx = length_x / particles_in_x;
+                particles_dy = length_y / particles_in_y;
 
                 for (std::size_t i = 0; i < particles_in_x; ++i)
                 {
@@ -83,7 +70,16 @@ public:
 
                 break;
             }
-            case particle_distribution::random:
+            case grid::particle_distribution::random:
+            {
+                std::random_device rd;
+
+                std::mt19937 e2(rd());
+
+                std::uniform_real_distribution<> dist_x(0, length_x);
+                std::uniform_real_distribution<> dist_y(0, length_y);
+
+
                 for (std::size_t num = 0; num < amount; ++num)
                 {
                     x = dist_x(rd);
@@ -104,7 +100,8 @@ public:
                     }
                 }
                 break;
-            case particle_distribution::inflow:
+            }
+            case grid::particle_distribution::at_instream:
             {
                 if (bcs.type[grid::direction::left] == grid::boundary_condition_type::instream)
                 {
@@ -275,17 +272,28 @@ public:
             x = std::max(0., std::min(length_x, x));
             y += dt * v;
             y = std::max(0., std::min(length_y, y));
+
+            particle.angle = std::atan2(v, u);
         }
 
         particles.erase(std::remove_if(particles.begin(), particles.end(),
                                     [&](const auto& particle)
                                     {
-                                        auto& x = particle.x;
-                                        auto& y = particle.y;
-                                        return x == 0 && bcs.type[grid::direction::left] == grid::boundary_condition_type::outstream
-                                            || x == length_x && bcs.type[grid::direction::right] == grid::boundary_condition_type::outstream
-                                            || y == 0 && bcs.type[grid::direction::bottom] == grid::boundary_condition_type::outstream
-                                            || y == length_y && bcs.type[grid::direction::top] == grid::boundary_condition_type::outstream;
+                                        auto const& x = particle.x;
+                                        auto const& y = particle.y;
+
+                                        auto const cell = grid.get_cell(particle);
+
+                                        auto const& i = cell.first;
+                                        auto const& j = cell.second;
+
+                                        auto& type = grid.cell_type(i, j);
+
+                                        return (x == 0 && bcs.type[grid::direction::left] == grid::boundary_condition_type::outstream)
+                                            || (x == length_x && bcs.type[grid::direction::right] == grid::boundary_condition_type::outstream)
+                                            || (y == 0 && bcs.type[grid::direction::bottom] == grid::boundary_condition_type::outstream)
+                                            || (y == length_y && bcs.type[grid::direction::top] == grid::boundary_condition_type::outstream)
+                                            || type[is_obstacle];
                                     }),
                         particles.end());
     }

@@ -9,7 +9,7 @@ cdef extern from "parameters/parameters.hpp" namespace "nast::parameters":
 		Jacobi = 0
 		SOR = 1
 	
-	cdef struct parameters:
+	cdef cppclass parameters:
 		double reynolds
 	
 		double initial_dt

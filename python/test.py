@@ -1,52 +1,43 @@
 import nast
 
-print(dir(nast))
+sim = nast.Simulation()
 
-bcs = nast.BoundaryConditions()
+sim.parameters.verbose = 1
+sim.parameters.max_timesteps = 1000
+sim.parameters.t_end = 0
 
-bcs.left_type = nast.BoundaryConditionType.instream
-bcs.left = (1, 0)
+sim.set_boundary_condition(nast.Direction.left, nast.BoundaryConditionType.instream, (1, 0))
+sim.set_boundary_condition(nast.Direction.right, nast.BoundaryConditionType.outstream)
+sim.set_boundary_condition(nast.Direction.bottom, nast.BoundaryConditionType.slip)
+sim.set_boundary_condition(nast.Direction.top, nast.BoundaryConditionType.slip)
 
-bcs.right_type = nast.BoundaryConditionType.outstream
+sim.set_grid_size(50, 20)
+sim.set_grid_length(5, 2)
 
-bcs.bottom_type = nast.BoundaryConditionType.slip
-bcs.top_type = nast.BoundaryConditionType.slip	
-											
-grid = nast.Grid(50, 20)
-grid.set_length(5, 1)
-	
-params = nast.Parameters()
+sim.toggle_cell_type(10, 10)
+sim.toggle_cell_type(9, 10)
+#sim.toggle_cell_type(10, 9, 2)
+#sim.toggle_cell_type(9, 9)
 
-params.verbose = True
-params.solver = nast.SolverType.sor
-	
-grid.set_obstacle(1, 20, 1, 9);
-grid.set_obstacle(25, 35, 11, 18);
+print(sim.grid.cell_type)
 
-integrator = nast.TimeIntegrator()
+sim.sanitize_cell_types()
 
-writer = nast.VTKWriter()
-		
-t = 0
-dt = params.initial_dt
+print()
+print()
+print(sim.grid.cell_type)
 
-timestep = 0
-while True:
-	timestep += 1
+print(sim.boundary_conditions)
 
-	if params.verbose:
-		print("Timestep {}: time {} dt {}".format(timestep, t, dt))
-		
-	dt = integrator.do_timestep(grid, bcs, params, dt)
-	
-	writer.write_grid("test_{}.vtr".format(timestep), grid)
-	
-	t += dt
-	
-	if (timestep >= 10):
-		break
-	#if (params.t_end > 0 and t > params.t_end) or (params.max_timesteps > 0 and timestep >= params.max_timesteps):
-	#	break
+
+print(sim.parameters)
+
+sim.set_obstacle(1, 20, 1, 9);
+sim.set_obstacle(25, 35, 11, 18);
+
+#sim.add_particles(nast.ParticleDistribution.uniform, 100)
+
+#sim.run()
 
 	
 

@@ -5,6 +5,13 @@
 
 namespace nast { namespace grid {
 
+enum particle_distribution
+{
+    uniform,
+    random,
+    at_instream
+};
+
 struct particle {
     particle(Real x_, Real y_, Real angle_) : x(x_), y(y_), angle(angle_) {}
 

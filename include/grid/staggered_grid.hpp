@@ -11,6 +11,8 @@ namespace nast { namespace grid {
 	class staggered_grid
 	{
 	public:
+        using index = std::pair<std::size_t, std::size_t>;
+
 		staggered_grid(std::size_t size_x_ = 0, std::size_t size_y_ = 0) 
 			: 
 			  u(size_x_, size_y_), v(size_x_, size_y_), f(size_x_, size_y_),
@@ -20,12 +22,15 @@ namespace nast { namespace grid {
 			  length_x(1), length_y(1)
 		{
 			reset_cell_types();
+            update_variables();
 		}
 		
 		void set_length(Real length_x_, Real length_y_)
 		{
 			length_x = length_x_;
 			length_y = length_y_;
+
+            update_variables();
 		}
 		
 		void resize(std::size_t size_x_, std::size_t size_y_)
@@ -42,10 +47,16 @@ namespace nast { namespace grid {
 			cell_type.resize(size_x, size_y);
 			
 			reset_cell_types();
+            update_variables();
 		}
 		
 		void set_obstacle(std::size_t i_min, std::size_t i_max, std::size_t j_min, std::size_t j_max)
 		{
+            i_min = std::max(2, std::min(size_x - 2, i_min));
+            i_max = std::max(2, std::min(size_x - 2, i_max));
+            j_min = std::max(2, std::min(size_y - 2, j_min));
+            j_max = std::max(2, std::min(size_y - 2, j_max));
+
 			obstacle_cells.reserve(obstacle_cells.size() + (i_max - i_min + 1) * (j_max - j_min + 1));
 			
 			for (std::size_t i = i_min; i <= i_max; ++i)
@@ -78,6 +89,11 @@ namespace nast { namespace grid {
 		
 		void set_fluid(std::size_t i_min, std::size_t i_max, std::size_t j_min, std::size_t j_max)
 		{
+            i_min = std::max(2, std::min(size_x - 2, i_min));
+            i_max = std::max(2, std::min(size_x - 2, i_max));
+            j_min = std::max(2, std::min(size_y - 2, j_min));
+            j_max = std::max(2, std::min(size_y - 2, j_max));
+
 			fluid_cells.reserve(fluid_cells.size() + (i_max - i_min + 1) * (j_max - j_min + 1));
 			
 			for (std::size_t i = i_min; i <= i_max; ++i)
@@ -107,7 +123,67 @@ namespace nast { namespace grid {
 				}
 			}
 		}
-								
+
+		void toggle_cell_type(std::size_t i, std::size_t j, std::size_t width = 1)
+        {
+            std::size_t i_min = i;
+            std::size_t i_max = i + width - 1;
+
+            std::size_t j_min = j;
+            std::size_t j_max = j + width - 1;
+
+            auto& type = cell_type(i, j);
+
+            if (type[is_obstacle])
+            {
+                set_fluid(i_min, i_max, j_min, j_max);
+            }
+            else
+            {
+               set_obstacle(i_min, i_max, j_min, j_max);
+            }
+        }
+
+        void sanitize_cell_types()
+        {
+            std::size_t old_number_of_obstacles = 0;
+
+            std::size_t iterations = 0;
+
+            do
+            {
+                ++iterations;
+                old_number_of_obstacles = obstacle_cells.size();
+
+                for (auto& obstacle : obstacle_cells)
+                {
+                    auto i = obstacle.first;
+                    auto j = obstacle.second;
+
+                    auto& type = cell_type(i, j);
+
+                    if (type.count() > 3)
+                    {
+                        type.set(is_fluid);
+                        type.set(is_obstacle, 0);
+
+                        cell_type(i - 1, j).set(has_fluid_right, 1);
+                        cell_type(i + 1, j).set(has_fluid_left, 1);
+                        cell_type(i, j - 1).set(has_fluid_top, 1);
+                        cell_type(i, j + 1).set(has_fluid_bottom, 1);
+
+                        obstacle_cells.erase(std::remove(obstacle_cells.begin(), obstacle_cells.end(), std::make_pair(i, j)), obstacle_cells.end());
+
+                        fluid_cells.emplace_back(i, j);
+                    }
+
+                }
+            }
+            while (old_number_of_obstacles != obstacle_cells.size());
+
+           // std::cout << "Sanitizing cell types took " << iterations << " iterations." << std::endl;
+        }
+
 		void reset_cell_types()
 		{			
 			obstacle_cells.clear();
@@ -152,19 +228,33 @@ namespace nast { namespace grid {
 				}
 			}
 		}
+
+		index get_cell(particle const& p) const
+        {
+            return get_cell(p.x, p.y);
+        }
+
+
+		index get_cell(Real x, Real y) const
+        {
+            auto cell_i = static_cast<std::size_t>(std::floor(x / dx)) + 1;
+            auto cell_j = static_cast<std::size_t>(std::floor(y / dy)) + 1;
+
+            return std::make_pair(cell_i, cell_j);
+        }
 		
-		std::size_t get_size_x() const { return size_x; }
-		std::size_t get_size_y() const { return size_y; }
-		std::size_t get_size() const { return size; }
+		inline std::size_t get_size_x() const { return size_x; }
+		inline std::size_t get_size_y() const { return size_y; }
+		inline std::size_t get_size() const { return size; }
 		
-		Real get_length_x() const { return length_x; }
-		Real get_length_y() const { return length_y; }
+		inline Real get_length_x() const { return length_x; }
+		inline Real get_length_y() const { return length_y; }
 		
-		Real get_dx() const { return length_x/(size_x - 2); }
-		Real get_dy() const { return length_y/(size_y - 2); }
+		inline Real get_dx() const { return dx; }
+		inline Real get_dy() const { return dy; }
 		
-		Real get_dx_sq() const { auto dx = get_dx(); return dx * dx; }
-		Real get_dy_sq() const { auto dy = get_dy(); return dy * dy; }
+		inline Real get_dx_sq() const { return dx_sq; }
+		inline Real get_dy_sq() const { return dy_sq; }
 		
 		grid_data<Real> u;
 		grid_data<Real> v;
@@ -175,12 +265,23 @@ namespace nast { namespace grid {
 		
 		grid_data<std::bitset<NUM_BITS> > cell_type;
 		
-		std::vector<std::pair<std::size_t, std::size_t> > fluid_cells;
-		std::vector<std::pair<std::size_t, std::size_t> > obstacle_cells;
+		std::vector<index> fluid_cells;
+		std::vector<index> obstacle_cells;
 		
 	private:
+
+        void update_variables()
+        {
+            dx = length_x / (size_x - 2);
+            dy = length_y / (size_y - 2);
+
+            dx_sq = std::pow(dx, 2);
+            dy_sq = std::pow(dy, 2);
+        }
+
 		std::size_t size_x, size_y, size;
 		Real length_x, length_y;
+        Real dx, dy, dx_sq, dy_sq;
 		
 	};
 	
