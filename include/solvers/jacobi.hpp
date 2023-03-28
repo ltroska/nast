@@ -6,21 +6,21 @@
 #include <iostream>
 
 namespace nast { namespace solvers {
-	
+
 class jacobi : public solver_base {
 public:
-	virtual void solve(grid::staggered_grid& grid, const parameters::parameters& params) override
+	virtual void solve(grid::staggered_grid& grid, const parameters::parameters&) override
 	{
 		auto dx_sq = grid.get_dx_sq();
 		auto dy_sq = grid.get_dy_sq();
-		
+
 		auto old_p = grid.p;
-		
+
 		for (auto& id : grid.fluid_cells)
 		{
 			auto& i = id.first;
 			auto& j = id.second;
-		
+
 			grid.p(i, j) =
                          ( (old_p(i + 1, j) + old_p(i - 1, j)) * dy_sq
                             + (old_p(i, j + 1) + old_p(i, j - 1)) * dx_sq
@@ -30,7 +30,7 @@ public:
 		}
 	}
 };
-	
+
 } //namespace solvers
 } //namespace nast
 

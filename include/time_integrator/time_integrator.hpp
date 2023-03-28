@@ -21,9 +21,9 @@ public:
 		{
 			dt = params.initial_dt;
 		}
-		
+
 		std::unique_ptr<nast::solvers::solver_base> solver;
-		
+
 		if  (params.solver == nast::parameters::solver_type::SOR)
 		{
 			solver = std::make_unique<nast::solvers::sor>();
@@ -33,7 +33,7 @@ public:
 			solver = std::make_unique<nast::solvers::jacobi>();
 		}
 		apply_boundary_conditions(grid, bcs);
-		
+
 		//std::cout << grid.u << std::endl;
 
 		compute_forces(grid, bcs, params, dt);
@@ -43,49 +43,49 @@ public:
 		//std::cout << grid.rhs << std::endl;
 
 		Real residual = 0;
-		
+
 		std::size_t iteration = 0;
-		
+
 		Real eps_sq = std::pow(params.eps, 2);
-				
-		do {		
+
+		do {
 			++iteration;
-	
-			set_obstacle_pressure(grid, dt);
+
+			set_obstacle_pressure(grid);
 				//	std::cout << grid.p << std::endl;
 
 
 			solver->solve(grid, params);
-			
-			residual = solver->compute_residual(grid);	
-		} while (residual > eps_sq && iteration < params.max_solver_iterations);		
+
+			residual = solver->compute_residual(grid);
+		} while (residual > eps_sq && iteration < params.max_solver_iterations);
 
 		if (params.verbose)
-			std::cout << "Iterations: " << iteration << " Residual: " << residual << std::endl;			
+			std::cout << "Iterations: " << iteration << " Residual: " << residual << std::endl;
 
 		auto max_uv = update_velocity(grid, dt);
-		
-		auto next_dt = params.tau * std::min(params.reynolds / 2 / ( 1 / grid.get_dx_sq() + 1 / grid.get_dy_sq()), std::min(grid.get_dx() / std::abs(max_uv.first), grid.get_dy() / std::abs(max_uv.second)));	
-		
+
+		auto next_dt = params.tau * std::min(params.reynolds / 2 / ( 1 / grid.get_dx_sq() + 1 / grid.get_dy_sq()), std::min(grid.get_dx() / std::abs(max_uv.first), grid.get_dy() / std::abs(max_uv.second)));
+
 		return next_dt;
 	}
-		
+
 	void apply_boundary_conditions(grid::staggered_grid& grid, const grid::boundary_conditions& bcs)
 	{
 		auto size_x = grid.get_size_x();
 		auto size_y = grid.get_size_y();
-		
+
 		auto top_right_fluid_u = grid.u(size_x - 2, size_y - 2);
 		auto top_right_fluid_v = grid.v(size_x - 2, size_y - 3);
-		
-		
-		
+
+
+
 		std::size_t i, j;
-		
-		
+
+
 		// left
-		i = 0;	
-		
+		i = 0;
+
 		for (j = 1; j < size_y - 1; ++j)
 		{
             auto const& type = grid.cell_type(i, j);
@@ -116,11 +116,11 @@ public:
                 }
             }
 		}
-		
+
 		// right
-		
+
 		i = size_x - 1;
-		
+
 		for (j = 1; j < size_y - 1; ++j)
 		{
             auto const& type = grid.cell_type(i, j);
@@ -153,9 +153,9 @@ public:
 		}
 
 		// bottom
-		
+
 		j = 0;
-		
+
 		for (i = 1; i < size_x - 1; ++i)
 		{
             auto const& type = grid.cell_type(i, j);
@@ -186,16 +186,16 @@ public:
                 }
             }
 		}
-		
+
 		// top
-		
+
 		j = size_y - 1;
 
 		for (i = 1; i < size_x - 1; ++i)
-		{						
+		{
 			auto& neighbor_u = (i == size_x - 2) ? top_right_fluid_u : grid.u(i, j - 1);
 			auto& neighbor_v = (i == size_x - 2) ? top_right_fluid_v : grid.v(i, j - 2);
-			
+
             auto const& type = grid.cell_type(i, j);
 
             if (type[has_fluid_bottom])
@@ -224,14 +224,14 @@ public:
                 }
             }
 		}
-		
+
 		for (auto& id : grid.obstacle_cells)
 		{
 			auto& i = id.first;
 			auto& j = id.second;
-			
+
 			auto& type = grid.cell_type(i, j);
-			
+
 			grid.u(i, j) =
 				- grid.u(i, j - 1) * type[has_fluid_bottom]
 				- grid.u(i, j + 1) * type[has_fluid_top];
@@ -239,21 +239,21 @@ public:
 			grid.v(i, j) =
 				- grid.v(i - 1, j) * type[has_fluid_left]
 				- grid.v(i + 1, j) * type[has_fluid_right];
-		
+
 		}
 	}
-	
+
 	void compute_forces(grid::staggered_grid& grid, const grid::boundary_conditions& bcs, const parameters::parameters& params, Real dt)
 	{
 		auto size_x = grid.get_size_x();
 		auto size_y = grid.get_size_y();
-		
+
 		auto dx = grid.get_dx();
 		auto dy = grid.get_dy();
-		
+
 		auto dx_sq = grid.get_dx_sq();
 		auto dy_sq = grid.get_dy_sq();
-		
+
 		for (std::size_t j = 0; j < size_y - 1; ++j)
 		{
 			for (std::size_t i = 0; i < size_x - 1; ++i)
@@ -261,9 +261,9 @@ public:
 				auto const& type = grid.cell_type(i, j);
 				grid.f(i, j) = grid.u(i, j);
 				grid.g(i, j) = grid.v(i, j);
-				
+
 				if (type[is_fluid])
-				{			
+				{
 					if (type[has_fluid_right])
 					{
 						grid.f(i, j) +=
@@ -277,7 +277,7 @@ public:
 								+ bcs.value[grid::direction::external_forces].x
 							);
 					}
-					
+
 					if (type[has_fluid_top])
 					{
 						grid.g(i, j) +=
@@ -293,14 +293,14 @@ public:
 					}
 				}
 			}
-		}		
+		}
 	}
 
 	void compute_rhs(grid::staggered_grid& grid, Real dt)
-	{		
+	{
 		auto dx = grid.get_dx();
 		auto dy = grid.get_dy();
-		
+
 		for (auto& id : grid.fluid_cells)
 		{
 			auto& i = id.first;
@@ -311,62 +311,62 @@ public:
 								(grid.f(i, j) - grid.f(i - 1, j)) / dx
 								+
 								(grid.g(i, j) - grid.g(i, j - 1)) / dy
-							);					
+							);
 		}
 	}
-	
-	void set_obstacle_pressure(grid::staggered_grid& grid, Real dt)
+
+	void set_obstacle_pressure(grid::staggered_grid& grid)
 	{
 		auto size_x = grid.get_size_x();
 		auto size_y = grid.get_size_y();
-		
+
 		auto dx_sq = grid.get_dx_sq();
 		auto dy_sq = grid.get_dy_sq();
-		
+
 		std::size_t i, j;
-		
+
 		// TODO: maybe add if(has_fluid_X) check
 		// left
-		i = 0;	
-		
+		i = 0;
+
 		for (j = 1; j < size_y - 1; ++j)
 		{
 			grid.p(i, j) = grid.p(i + 1, j);
 		}
-		
+
 		// right
-		
+
 		i = size_x - 1;
-		
+
 		for (j = 1; j < size_y - 1; ++j)
 		{
 			grid.p(i, j) = grid.p(i - 1, j);
 		}
 
 		// bottom
-		
+
 		j = 0;
-		
+
 		for (i = 1; i < size_x - 1; ++i)
 		{
 			grid.p(i, j) = grid.p(i, j + 1);
 		}
-		
+
 		// top
-		
+
 		j = size_y - 1;
 
 		for (i = 1; i < size_x - 1; ++i)
-		{						
+		{
 			grid.p(i, j) = grid.p(i, j - 1);
 		}
-		
+
 		for (auto& id : grid.obstacle_cells)
 		{
 			auto& i = id.first;
 			auto& j = id.second;
 			auto const& type = grid.cell_type(i, j);
-			
+
 			grid.p(i, j) =
 			(
 				dx_sq * (grid.p(i - 1, j) * type.test(has_fluid_left)
@@ -380,17 +380,17 @@ public:
 				+ type.test(has_fluid_right) )
 				+ dy_sq * (type.test(has_fluid_bottom)
 				+ type.test(has_fluid_top))
-			);	
+			);
 		}
 	}
 
 	std::pair<Real, Real> update_velocity(grid::staggered_grid& grid, Real dt)
-	{		
+	{
 		auto dx = grid.get_dx();
 		auto dy = grid.get_dy();
-		
+
 		std::pair<Real, Real> max_uv{0, 0};
-		
+
 		for (auto& id : grid.fluid_cells)
 		{
 			auto& i = id.first;
@@ -413,7 +413,7 @@ public:
 				max_uv.second = std::abs(grid.v(i, j)) > max_uv.second ? std::abs(grid.v(i, j)) : max_uv.second;
 			}
 		}
-		
+
 		return max_uv;
 	}
 

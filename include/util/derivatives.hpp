@@ -1,7 +1,7 @@
 /** All stencils are provided in this header as inline methods
  */
 #ifndef NAST_UTIL_DERIVATIVES_HPP_
-#define NAST__UTIL_DERIVATIVES_HPP_
+#define NAST_UTIL_DERIVATIVES_HPP_
 
 #include "grid/grid_data.hpp"
 

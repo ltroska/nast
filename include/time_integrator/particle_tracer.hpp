@@ -29,7 +29,7 @@ public:
 
         Real x, y;
 
-        std::size_t i, j;
+        Real i, j;
         std::size_t cell_i, cell_j;
         Real particles_dx, particles_dy;
         std::size_t particles_in_x, particles_in_y;

@@ -15,7 +15,7 @@
 #include "solvers/jacobi.hpp"
 
 namespace nast { namespace simulation {
-	
+
 	class simulation
 	{
 	public:
@@ -24,7 +24,7 @@ namespace nast { namespace simulation {
 		simulation() : grid(0, 0)
 		{
 		}
-		
+
 		void set_boundary_condition(grid::direction direction, grid::boundary_condition_type type, grid::boundary_data<Real> value = {0, 0})
         {
             bcs.type[direction] = type;
@@ -40,22 +40,22 @@ namespace nast { namespace simulation {
 		{
 			bcs = bcs_;
 		}
-		
+
 		void set_parameters(parameters::parameters parameters_)
 		{
-			parameters = parameters;
+			parameters = parameters_;
         }
-		
+
 		void set_grid_size(std::size_t size_x, std::size_t size_y)
 		{
 			grid.resize(size_x, size_y);
 		}
-		
+
 		void set_grid_length(Real length_x, Real length_y)
 		{
 			grid.set_length(length_x, length_y);
 		}
-		
+
 		void set_obstacle(std::size_t i_min, std::size_t i_max, std::size_t j_min, std::size_t j_max)
         {
             grid.set_obstacle(i_min, i_max, j_min, j_max);
@@ -97,20 +97,20 @@ namespace nast { namespace simulation {
         }
 
 		Real do_timestep(Real dt)
-		{					
+		{
 			if (dt < 1e-12)
 			{
 				dt = parameters.initial_dt;
 			}
 			return time_integrator.do_timestep(grid, bcs, parameters, dt);
 		}
-		
+
 		void run()
 		{
 			Real t = 0;
 			Real dt = parameters.initial_dt;
             Real old_dt;
-			
+
 			std::size_t timestep = 0;
 			while (true)
 			{
@@ -122,7 +122,7 @@ namespace nast { namespace simulation {
 				{
 					std::cout << "Timestep " << timestep << ": time " << t << " dt " << dt << std::endl;
 				}
-				
+
 				dt = do_timestep(dt);
 
                 advance_particles(old_dt);
@@ -133,16 +133,16 @@ namespace nast { namespace simulation {
                 if (timestep % 10 == 0)
                     add_particles(grid::particle_distribution::random, 100);
 
-				
+
 				t += dt;
-				
+
 				if ( (parameters.t_end > 0 && t > parameters.t_end) || (parameters.max_timesteps > 0 && timestep >= parameters.max_timesteps) )
 				{
 					break;
 				}
-			}					
+			}
 		}
-		
+
 		void write_grid_to_file(std::string filename)
 		{
 			writer.write_grid(filename, grid);
@@ -152,7 +152,7 @@ namespace nast { namespace simulation {
 		{
 			writer.write_particles(filename, particles);
 		}
-		
+
 		parameters::parameters parameters;
 
 		grid::staggered_grid grid;
@@ -161,11 +161,11 @@ namespace nast { namespace simulation {
         time_integrator::particle_tracer particle_tracer;
 
         std::vector<grid::particle> particles;
-		
+
 	private:
 		io::vtk_writer writer;
 	};
-	
+
 } // namespace simulation
 } // namespace nast
 
